@@ -1,42 +1,39 @@
 const express = require('express');
 const Product = require('../dao/models/product.model');
-const { authenticateUser, authorize } = require('../../middlewares/authMiddleware');
+const { authMiddleware, isAdmin } = require('../middlewares/authMiddleware');
 
 const router = express.Router();
 
-// 🔐 Solo los administradores pueden crear productos
-router.post('/', authenticateUser, authorize('admin'), async (req, res) => {
-  try {
-    const newProduct = new Product(req.body);
-    await newProduct.save();
-    res.status(201).json({ message: 'Producto creado', product: newProduct });
-  } catch (error) {
-    res.status(500).json({ message: 'Error al crear el producto' });
-  }
+// Obtener todos los productos
+router.get('/', async (req, res) => {
+  const products = await Product.find();
+  res.json(products);
 });
 
-// 🔐 Solo los administradores pueden actualizar productos
-router.put('/:id', authenticateUser, authorize('admin'), async (req, res) => {
-  try {
-    const product = await Product.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    if (!product) return res.status(404).json({ message: 'Producto no encontrado' });
-
-    res.json({ message: 'Producto actualizado', product });
-  } catch (error) {
-    res.status(500).json({ message: 'Error al actualizar el producto' });
-  }
+// Obtener un producto por ID
+router.get('/:id', async (req, res) => {
+  const product = await Product.findById(req.params.id);
+  res.json(product);
 });
 
-// 🔐 Solo los administradores pueden eliminar productos
-router.delete('/:id', authenticateUser, authorize('admin'), async (req, res) => {
-  try {
-    const product = await Product.findByIdAndDelete(req.params.id);
-    if (!product) return res.status(404).json({ message: 'Producto no encontrado' });
+// Crear un nuevo producto (solo admin)
+router.post('/', authMiddleware, isAdmin, async (req, res) => {
+  const newProduct = new Product(req.body);
+  await newProduct.save();
+  res.status(201).json(newProduct);
+});
 
-    res.json({ message: 'Producto eliminado' });
-  } catch (error) {
-    res.status(500).json({ message: 'Error al eliminar el producto' });
-  }
+// Actualizar producto (solo admin)
+router.put('/:id', authMiddleware, isAdmin, async (req, res) => {
+  const updatedProduct = await Product.findByIdAndUpdate(req.params.id, req.body, { new: true });
+  res.json(updatedProduct);
+});
+
+// Eliminar producto (solo admin)
+router.delete('/:id', authMiddleware, isAdmin, async (req, res) => {
+  await Product.findByIdAndDelete(req.params.id);
+  res.json({ message: 'Producto eliminado' });
 });
 
 module.exports = router;
+
