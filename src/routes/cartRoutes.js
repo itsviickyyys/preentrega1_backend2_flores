@@ -1,7 +1,7 @@
 const express = require('express');
 const Product = require('../dao/models/product.model');
 const Cart = require('../dao/models/cart.model');
-const Ticket = require('../models/Ticket');
+const Ticket = require('../dao/models/Ticket');
 const { authMiddleware, isAdmin, authenticateUser, authorize } = require('../middlewares/authMiddleware');
 
 const router = express.Router();
